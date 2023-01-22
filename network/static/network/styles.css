@@ -1,0 +1,241 @@
+/* American Flag: #ffffff #b22234 #3c3b6e */
+/* Profile images: https://www.empireonline.com/west-wing/whoswho.html */
+
+body {
+    font-family: 'Public Sans', sans-serif;
+    font-weight: 300;
+}
+
+.body { 
+    position: relative;
+    padding: 1rem; 
+}
+
+.body::before {
+    content: "";
+    position: absolute;
+    background-image: url("https://static.vecteezy.com/system/resources/previews/002/011/582/original/usa-or-america-flag-background-design-of-watercolor-on-white-background-illustration-vector.jpg");
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    left: 0px;
+    opacity: 0.2;
+}
+
+#login {
+    position: relative;
+}
+
+#register {
+    position: relative;
+}
+
+nav {
+    background-color: #3c3b6e;
+}
+
+.navbar-nav {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.navbar-nav div {
+    margin-right: 1rem;
+}
+
+.navbar-brand {
+    font-family: 'Crimson Pro', serif;
+    font-size: 2rem;
+    padding: 1rem;
+    color: white;
+}
+
+.nav-item {
+    display: inline-block;
+    padding: 0.5rem 0.5rem 0 0.5rem;
+    margin-top: 1rem;
+}
+
+.nav-link {
+    color: white;
+    display: inline-block;
+}
+
+.nav-link:hover {
+    color: #007bff;
+}
+
+#followed-posts {
+    color: white;
+}
+
+#followed-posts:hover {
+    color: #007bff;
+    cursor: pointer;
+}
+
+.nav-username {
+    font-weight: 800;
+}
+
+.nav-username:hover {
+    color: white;
+}
+
+#new-post {
+    position: relative;
+}
+
+.btn-primary {
+    background-color: #b22234;
+    margin-bottom: 1rem;
+    height: 2rem;
+    line-height: 1rem;
+    border: none;
+    vertical-align: top;
+}
+
+.login-to-post-btn {
+    vertical-align: text-top;
+}
+
+#login-btn-text {
+    color: white;
+}
+
+#login-btn-after-text {
+    vertical-align: text-top;
+}
+
+.btn-primary:hover {
+    background-color: #3c3b6e;
+}
+
+#posts-section-header {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    margin-top: 1rem;
+}
+
+#posts-section-header h5 {
+    display: inline-block;
+    font-size: 1.5rem;
+    padding-top: 0.25rem;
+}
+
+.page-item.active .page-link {
+    background-color: #3c3b6e;
+    border-color: #3c3b6e;
+}
+
+#posts {
+    position: relative;
+}
+
+.post-box {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    background-color: white;
+    margin-bottom: 0.75rem;
+    padding: 0.75rem 0.75rem 0.5rem 0.75rem;
+}
+
+.spaced-content {
+    display: flex;
+    justify-content: space-between;
+}
+
+.post-username {
+    display: inline;
+    font-weight: bold;
+    padding-bottom: 0.25rem;
+    margin-bottom: 0;
+}
+
+.post-username:hover {
+    cursor: pointer;
+}
+
+.post-content {
+    margin-bottom: 0.5rem;
+}
+
+.post-timestamp {
+    display: inline;
+    font-size: smaller;
+    margin-bottom: 0;
+}
+
+.material-symbols-outlined {
+    font-variation-settings:
+    'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 48
+}
+
+#like-button:hover {
+    cursor: pointer;
+}
+
+#likes-count {
+    display: inline-block;
+    font-size: smaller;
+    vertical-align: top;
+    padding-top: 0.25rem;
+    padding-left: 1rem;
+    margin-bottom: 0;
+}
+
+#edit-link {
+    display: inline-block;
+    font-size: smaller;
+    color: #007bff;
+    font-weight: 600;
+    vertical-align: top;
+    padding-top: 0.25rem;
+    padding-left: 1.5rem;
+}
+
+#edit-link:hover {
+    cursor: pointer;
+}
+
+#profile {
+    position: relative;
+}
+
+.profile-container {
+    display: flex;
+    padding: 1rem;
+}
+
+.profile-image-box {
+    min-width: 150px;
+    max-width: 200px;
+    max-height: 200px;
+    flex: 0 0 30%;
+    border: 1px solid black;
+}
+
+.profile-image {
+    width: 100%;
+}
+
+.profile-title {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.profile-info {
+    flex: 0 0 70%;
+    flex-direction: column;
+    padding-left: 1.5rem;
+}
+
+.profile-button {
+    margin-top: 1rem;
+}

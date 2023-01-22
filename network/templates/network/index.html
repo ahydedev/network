@@ -1,0 +1,406 @@
+{% extends "network/layout.html" %}
+
+{% block body %}
+
+<div id="profile">
+</div>
+
+<div id="new-post">
+    <p>Post something...</p>
+    <form id="new-post-form">
+        <div class="form-group">
+            <textarea class="form-control" id="post-content" rows="2" placeholder="Enter your post content here"></textarea>
+        </div>
+        <p id="login-to-post"><button id="login-btn" class="btn btn-primary"><a id="login-btn-text" href="/login">Login</a></button>&nbsp <span id="login-btn-after-text">to post.</span></p>
+    </form>
+</div>
+
+<div id="posts-section-header">
+    <h5 id="posts-category">All Posts</h5>    
+    <div id="pages-nav">
+        <ul id="pages-nav-list" class="pagination pagination-sm justify-content-center">
+        </ul>
+    </div>
+</div>
+
+<div id="posts">
+</div>
+
+<script>
+
+    document.addEventListener("DOMContentLoaded", function() {
+
+        // Load All Posts
+        load_posts("all", 1);
+
+        // When "Following" selected on navbar, display followed posts
+        document.querySelector("#followed-posts").addEventListener("click", function() {
+            load_posts("following", 1);                
+        });  
+
+        // When the user submits a new post form, submit the post
+        document.querySelector("#new-post-form").onsubmit = add_post;
+    });
+   
+    function add_post() {
+
+        // Place post content in variable
+        content = document.querySelector("#post-content").value;
+
+        // Use fetch to submit new post in JSON format
+        fetch('/new', {
+            method: 'POST',
+            body: JSON.stringify({
+                content: content
+            }),
+            headers: { "X-CSRFToken": "{{csrf_token}}" }         // CSRF validation with fetch ( https://stackoverflow.com/questions/43606056/proper-django-csrf-validation-using-fetch-post-request)
+        }) 
+        .then(response => response.json())
+        .then(result => {
+
+            // Print result
+            console.log(result);
+        });
+        location.reload();
+        return false;
+    }
+
+    function load_posts(post_owner, page) {
+    
+        // Display posts container
+        document.querySelector("#posts").style.display = 'block';
+        document.querySelector("#new-post").style.display = 'block';
+        document.querySelector("#profile").style.display = 'none';
+    
+        // Reset container contents
+        document.querySelector('#posts').innerHTML = "";
+        document.querySelector('#pages-nav-list').innerHTML = "";
+        if (document.querySelector("#post-button")) {
+            document.querySelector("#post-button").remove();
+        }
+
+        // Adjust title text based on whether user is viewing all posts, followed posts or a specific profile
+        document.querySelector("#posts-category").innerHTML = post_owner=="following" ? "Followed Posts" : "Posts";
+        if (post_owner == "all") {
+            document.querySelector("#posts-category").innerHTML = "All Posts";
+        }
+
+        // Fetch posts from server
+        fetch(`/posts/${post_owner}/${page}`)
+        .then(response => response.json())
+        .then(response => {
+
+            // Print json response
+            console.log(response);
+
+            // If user is logged in, replace login button with post button
+            if (response.user_authenticated) {
+                document.querySelector("#login-btn").style.display = "none";
+                document.querySelector("#login-to-post").style.display = "none";
+                post_button = document.createElement("button");
+                post_button.id = "post-button";
+                post_button.className = "btn btn-primary";
+                post_button.type = "submit";
+                post_button.innerHTML = "Post";
+                document.querySelector("#new-post-form").append(post_button);
+            }
+
+            // Load previous page link (disabled if page is first page)
+            const previous_page_link = document.createElement("li");
+            previous_page_link.className = response.has_previous ? "page-item" : "page-item disabled";
+            previous_page_link.innerHTML = `<a class="page-link" href="#" tabindex="-1">Previous</a>`;
+            previous_page_link.addEventListener("click", function() {
+                load_posts("all", page - 1);                
+            });
+            document.querySelector("#pages-nav-list").append(previous_page_link);
+
+            // For each page of paginated posts display a page link
+            for (let page = 1; page <= response.pages; page++) {
+                const page_link = document.createElement("li");
+                if (page == response.current_page) {
+                    page_link.className = "page-item active";
+                } else {
+                    page_link.className = "page-item";
+                }
+                page_link.innerHTML = `<a class="page-link" href="#">${page}</a></li>`;
+                page_link.addEventListener("click", function() {
+                    load_posts("all", page);
+                });
+                document.querySelector("#pages-nav-list").append(page_link);
+            }
+
+            // Load next page link
+            const next_page_link = document.createElement("li");
+            next_page_link.className = response.has_next ? "page-item" : "page-item disabled";
+            next_page_link.innerHTML = `<a class="page-link" href="#" tabindex="+1">Next</a>`;
+            next_page_link.addEventListener("click", function() {
+                load_posts("all", page + 1);                
+            });
+            document.querySelector("#pages-nav-list").append(next_page_link);
+
+            // If no posts exist, confirm to user
+            if (response.posts.length == 0) {
+                document.querySelector('#posts').innerHTML = "<p>There are no posts no display.</p>";
+            }
+
+            // For each post..
+            response.posts.forEach(post => {
+                
+                // Create a containing div for each post
+                const post_box = document.createElement('div');
+
+                // If user is post owner, place the poster's username, post content, timestamp, likes, and edit button in div
+                if (response.user_id == post.owner_id) {
+                    post_box.innerHTML = `
+                        <div class="spaced-content">
+                            <p class="post-username">${post.owner}</p>
+                            <p class="post-timestamp">${post.timestamp}</p>
+                        </div>
+                        <p class="post-content">${post.content}</p>
+                        <div id="post-buttons">
+                            <span id="like-button" class="material-icons">star_border</span>
+                            <p id="likes-count">Likes: &nbsp${post.likes}</p>
+                            <p id="edit-link">Edit</p>
+                        </div>
+                    `;
+                
+                // If user is not post owner, exclude edit button
+                } else {
+                    post_box.innerHTML = `
+                        <div class="spaced-content">
+                            <p class="post-username">${post.owner}</p>
+                            <p class="post-timestamp">${post.timestamp}</p>
+                        </div>
+                        <p class="post-content">${post.content}</p>
+                        <div id="post-buttons">
+                            <span id="like-button" class="material-icons">star_border</span>
+                            <p id="likes-count">Likes: &nbsp${post.likes}</p>
+                        </div>
+                    `;
+                }
+
+                // Assign unique ID to each instance of element
+                post_box.id += post.id;                
+                post_box.className += "post-box";
+
+                // When username is clicked on the post, direct user to poster's profile page
+                post_box.firstElementChild.addEventListener('click', function() {
+                    load_profile(post.owner_id);
+                });
+
+                // When like button is clicked, like the post
+                post_box.querySelector("#like-button").addEventListener("click", function() {
+                    like_post(post.id);
+                });
+
+                // When edit link is clicked, edit the post
+                if (post_box.querySelector("#edit-link")) {    
+                    post_box.querySelector("#edit-link").addEventListener("click", function() {
+                        edit_post(post);
+                    });        
+                }
+
+                // Display post box on page
+                document.querySelector("#posts").append(post_box);
+            });    
+        })
+        return false; 
+    }
+
+    function load_profile(post_owner) {
+
+        // Fetch profile 
+        fetch(`/profiles/${post_owner}`)
+        .then(response => response.json())
+        .then(response => {
+
+            // Console log profile
+            console.log(response);
+
+            // Display profile view
+            document.querySelector("#new-post").style.display = 'none';
+            document.querySelector("#posts").style.display = 'block';
+            document.querySelector("#profile").style.display = 'block';
+
+            // Display profile contents
+            document.querySelector('#profile').innerHTML = `    
+                <div class="profile-container">
+                    <div class="profile-image-box">
+                        <img class="profile-image" src="${response.profile.image}">
+                    </div>
+                    <div class="profile-info">
+                        <div><h1 class="profile-title">${response.profile.name}</h1></div>
+                        <div><h6>Followers: &nbsp${response.profile.followers}</h6></div>
+                        <div><h6>Following: &nbsp${response.profile.following}</h6></div>
+                    </div>
+                </div>
+            `;
+
+            // If no profile image exists, set to default image
+            if (!response.profile.image) {
+                document.querySelector(".profile-image").src = "https://static.vecteezy.com/system/resources/thumbnails/005/276/776/small_2x/logo-icon-person-on-white-background-free-vector.jpg";
+            }
+
+            // If user is authenticated..
+            if (response.user_authenticated) {
+
+                // If user is not the profile owner, add follow button
+                if (!response.profile.is_user) {
+                    const follow = document.createElement("button");
+                    follow.innerHTML = response.profile.is_followed_by_user ? "Unfollow" : "Follow"; 
+                    follow.className += "btn btn-primary profile-button";
+                    follow.addEventListener('click', function() {
+                        follow_profile(response.profile.id);
+                    });
+                    document.querySelector(".profile-info").append(follow);
+                }
+
+                // If user is the profile owner, add update photo button 
+                if (response.profile.is_user) {
+                    const update_img = document.createElement("button");
+                    update_img.innerHTML = "Update Photo"; 
+                    update_img.className += "btn btn-primary profile-button update-img-btn";
+                    update_img.addEventListener('click', function() {
+                        update_image(response.profile.id);
+                    });
+                    document.querySelector(".profile-info").append(update_img);
+                }
+            }
+                    
+            // Display profile user's posts newest first
+            load_posts(post_owner, 1);
+
+            // Reset display
+            document.querySelector("#posts").style.display = 'block';
+            document.querySelector("#new-post").style.display = 'none';
+            document.querySelector("#profile").style.display = 'block';
+        })
+    }
+
+    function follow_profile(profile_id) {
+
+        // Query and toggle follow status
+        fetch(`/follow/${profile_id}`)
+        .then(response => response.json())
+        .then(result => {
+    
+            // Print result
+            console.log(result);
+
+            // Update profile
+            load_profile(result.profile_owner);
+        })
+        return false;
+    }
+
+    function like_post(post_id) {
+
+        fetch(`/like/${post_id}`)
+        .then(response => response.json())
+        .then(response => {
+    
+            // Print response
+            console.log(response);
+
+            // Display number of likes  
+            post_box = document.getElementById(`${post_id}`);            
+            likes = post_box.querySelector("#likes-count");         // ( Accessing child elements: https://stackoverflow.com/questions/9776559/access-child-dom-object-from-parent-in-dotted-notation )
+            likes.innerHTML = `Likes: &nbsp${response.likes}`;   
+            
+            // Display star outline if post unliked, filled star if liked
+            like_button = post_box.querySelector("#like-button");
+            like_button.innerHTML = response.is_liked_by_user ? "star" : "star_outline";
+        })
+    }
+
+    function edit_post(post) {
+
+        // Add edit text area to specified post
+        const edit_post_div = document.createElement("div");
+        
+        document.getElementById(`${post.id}`).innerHTML = `  
+            <div class="spaced-content">    
+                <p class="post-username">${post.owner}</p>
+                <p class="post-timestamp">${post.timestamp}</p>  
+            </div>
+            <form id="edit-post-form">
+                <div class="form-group">
+                    <textarea class="form-control" id="edit-content" rows="2">${post.content}</textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </form>
+        `;
+    
+        // When form is submitted, save edited content
+        document.querySelector("#edit-post-form").onsubmit = function() {
+        
+            content = document.querySelector("#edit-content").value;      
+            fetch(`/edit/${post.id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    post_id: post.id,
+                    content: content
+                }),
+                headers: { "X-CSRFToken": "{{csrf_token}}" }
+            }) 
+            .then(response => response.json())
+            .then(response => {
+    
+                // Print response
+                console.log(response);
+
+                // Display updated post content  
+                post_box = document.getElementById(`${post.id}`);         
+                post_box.innerHTML = `
+                    <div class="spaced-content">
+                        <p class="post-username">${post.owner}</p>
+                        <p class="post-timestamp">${post.timestamp}</p>
+                    </div>
+                    <p class="post-content">${response.content}</p>
+                    <div id="post-buttons">
+                        <span id="like-button" class="material-icons">star_border</span>
+                        <p id="likes-count">Likes: &nbsp${post.likes}</p>
+                        <p id="edit-link">Edit</p>
+                    </div>
+                `;
+            })
+            return false;
+        }
+    }
+
+    function update_image(profile_id) {
+        
+        // Hide original update button
+        document.querySelector(".update-img-btn").style.display = "none";
+        
+        // Add a text input for user to enter image URL
+        const update_img_div = document.createElement("div");
+        update_img_div.innerHTML = `
+            <form id="update-img-form">
+                <div class="form-group">
+                    <textarea class="form-control" id="new-img-url" rows="1" placeholder="Enter image URL"></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Update</button>
+            </form> 
+        `;
+        document.querySelector(".profile-info").append(update_img_div);
+    
+        // When form is submitted, save new image
+        document.querySelector("#update-img-form").onsubmit = function() {
+        
+            image = document.querySelector("#new-img-url").value;
+            fetch(`/update_image/${profile_id}`, {
+                method: 'PUT',
+                body: JSON.stringify({
+                    image: image
+                }),
+                headers: { "X-CSRFToken": "{{csrf_token}}" }
+            })
+            location.reload();
+            return false;
+        }
+    }
+ 
+</script>
+
+{% endblock %}
